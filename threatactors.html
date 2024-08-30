@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fetch Data from Flask API</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&family=Zefani&display=swap');
+
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            background: url('background.png') no-repeat center center fixed;
+            background-size: cover;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+            position: relative;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            font-size: 2rem;
+            margin-bottom: 30px;
+            font-family: 'Zefani', sans-serif;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 6px;
+            text-align: center;
+        }
+        th {
+            background-color: #007bff;
+            color: #fff;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        tr:hover {
+            background-color: #e9ecef;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .page-item.active .page-link {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+        .footer {
+            background-color: #0a0000;
+            color: #fff;
+            text-align: center;
+            padding: 20px;
+            width: 100%;
+            position: fixed;
+            bottom: 0;
+        }
+        .footer p {
+            margin: 5px 0;
+        }
+        .footer .contact-info {
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+        .home-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: #007bff;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .home-button:hover {
+            background-color: #0056b3;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+        .home-button i {
+            font-size: 1.2rem;
+        }
+        .more-details {
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="home-button">
+            <i class="fas fa-home"></i> Home
+        </a>
+
+        <h1>THREAT ACTORS</h1>
+
+        <!-- Bootstrap Tabs -->
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" id="mitre-tab" data-toggle="tab" href="#mitre" role="tab" aria-controls="mitre" aria-selected="true">MITRE Threat Actors</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="malpedia-tab" data-toggle="tab" href="#malpedia" role="tab" aria-controls="malpedia" aria-selected="false">Malpedia Threat Actors</a>
+            </li>
+        </ul>
+        <div class="tab-content" id="myTabContent">
+            <div class="tab-pane fade show active" id="mitre" role="tabpanel" aria-labelledby="mitre-tab">
+                <div id="mitre-data-container"></div>
+                <div id="mitre-pagination" class="pagination"></div>
+            </div>
+            <div class="tab-pane fade" id="malpedia" role="tabpanel" aria-labelledby="malpedia-tab">
+                <div id="malpedia-data-container"></div>
+                <div id="malpedia-pagination" class="pagination"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Fetch data when the page loads
+            fetchData('mitre');
+            
+            // Fetch data when tabs are clicked
+            document.getElementById('mitre-tab').addEventListener('click', function() {
+                fetchData('mitre');
+            });
+            document.getElementById('malpedia-tab').addEventListener('click', function() {
+                fetchData('malpedia');
+            });
+        });
+
+        function fetchData(tab) {
+            let endpoint = '';
+            switch(tab) {
+                case 'mitre':
+                    endpoint = 'http://127.0.0.1:5000/mitre_threat_actors';
+                    break;
+                case 'malpedia':
+                    endpoint = 'http://127.0.0.1:5000/threat_actors2';
+                    break;
+            }
+
+            fetch(endpoint)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    displayData(tab, data);
+                })
+                .catch(error => {
+                    console.error('Error fetching data:', error);
+                });
+        }
+
+        function displayData(tab, data) {
+            const container = document.getElementById(tab + '-data-container');
+            const pagination = document.getElementById(tab + '-pagination');
+            container.innerHTML = ''; // Clear previous data
+            pagination.innerHTML = ''; // Clear previous pagination
+            const heading = document.createElement('h2');
+            // heading.textContent = tab === 'mitre' ? 'MITRE Threat Actors' : 'Malpedia Threat Actors';
+            // container.appendChild(heading);
+
+            const table = document.createElement('table');
+            const headerRow = document.createElement('tr');
+            if (tab === 'mitre') {
+                headerRow.innerHTML = '<th>ID</th><th>Name</th><th>Associated Groups</th><th>Description</th>';
+            } else if (tab === 'malpedia') {
+                headerRow.innerHTML = '<th>Name</th><th>Associated Families</th><th>Description</th>';
+            }
+            table.appendChild(headerRow);
+
+            // Pagination variables
+            const rowsPerPage = 10;
+            let currentPage = 1;
+            const totalRows = data.length;
+            const totalPages = Math.ceil(totalRows / rowsPerPage);
+
+            function displayPage(page) {
+                container.innerHTML = ''; // Clear previous data
+                container.appendChild(heading);
+                container.appendChild(table);
+                const startRow = (page - 1) * rowsPerPage;
+                const endRow = Math.min(startRow + rowsPerPage, totalRows);
+                table.innerHTML = ''; // Clear previous rows
+                table.appendChild(headerRow);
+                for (let i = startRow; i < endRow; i++) {
+                    const row = document.createElement('tr');
+                    Object.values(data[i]).forEach((value, index) => {
+                        const td = document.createElement('td');
+                        if ((tab === 'malpedia' && (index === 1 || index === 2)) || (tab === 'mitre' && index === 3)) {
+                            const words = value.split(' ');
+                            if (words.length > 20) {
+                                const shortText = words.slice(0, 20).join(' ');
+                                const remainingText = words.slice(20).join(' ');
+                                td.innerHTML = `${shortText} <span class="more-details" style="display:none;"> ${remainingText}</span> <a href="#" class="more-link">more </a>`;
+                            } else {
+                                td.textContent = value;
+                            }
+                        } else {
+                            td.textContent = value;
+                        }
+                        row.appendChild(td);
+                    });
+                    table.appendChild(row);
+                }
+                pagination.innerHTML = ''; // Clear previous pagination
+                for (let i = 1; i <= totalPages; i++) {
+                    const pageItem = document.createElement('li');
+                    pageItem.className = 'page-item' + (i === page ? ' active' : '');
+                    const pageLink = document.createElement('a');
+                    pageLink.className = 'page-link';
+                    pageLink.href = '#';
+                    pageLink.textContent = i;
+                    pageLink.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        displayPage(i);
+                    });
+                    pageItem.appendChild(pageLink);
+                    pagination.appendChild(pageItem);
+                }
+
+                // Add event listeners for more details links
+                const moreLinks = document.querySelectorAll('.more-link');
+                moreLinks.forEach(link => {
+                    link.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const moreDetails = this.previousElementSibling;
+                        moreDetails.style.display = 'inline'; // Toggle display of hidden text
+                        this.style.display = 'none'; // Hide "more" link
+                    });
+                });
+            }
+
+            // Initially display the first page
+            displayPage(currentPage);
+        }
+    </script>
+</body>
+</html>
