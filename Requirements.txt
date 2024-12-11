@@ -1,0 +1,4 @@
+-Jupyter Notebook
+-python
+-flask
+-sqlite3
